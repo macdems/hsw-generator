@@ -1,6 +1,4 @@
 #!/usr/bin/env python3
-
-from argparse import ArgumentParser, ArgumentTypeError
 from functools import reduce
 
 import cadquery as cq
@@ -8,10 +6,11 @@ import cadquery as cq
 SCREW_SIZES = {  # diameter, head diameter (0.1 mm clearance included)
     'M3': (3.3, 5.6),
     'M3.5': (3.8, 6.6),
+    'M4': (4.3, 7.6),
 }
 
 
-def make_plate(
+def make_base(
     rows: int,
     cols: int,
     *,
@@ -23,7 +22,7 @@ def make_plate(
     frame_right: bool = False,
 ) -> cq.Workplane:
     """
-    Make a HSW base plate with holes for mounting.
+    Make a HSW base with holes for mounting.
 
     Args:
         rows: Number of rows of holes.
@@ -104,9 +103,9 @@ def make_plate(
 
     # Plate
 
-    plate = cq.Workplane("XY").box((0.75 * cols + 0.25) * Px, rows * Py, 8.0, centered=(False, False, False))
-    plate = plate.cut(holes)
-    if edges: plate = plate.cut(edges)
+    base = cq.Workplane("XY").box((0.75 * cols + 0.25) * Px, rows * Py, 8.0, centered=(False, False, False))
+    base = base.cut(holes)
+    if edges: base = base.cut(edges)
 
     screw = SCREW_SIZES.get(screws)
 
@@ -115,72 +114,8 @@ def make_plate(
         right_screw_x = 1.50 * Px * right_screw + left_screw_x
         bottom_screw_y = 0.25 * Py
         top_screw_y = (rows - 0.25) * Py
-        plate = plate.faces(">Z").workplane() \
+        base = base.faces(">Z").workplane() \
             .pushPoints([(x, y) for x in (left_screw_x, right_screw_x) for y in (bottom_screw_y, top_screw_y)]) \
             .cskHole(screw[0], screw[1], 90)
 
-    return plate
-
-
-def main():
-
-    def frame_type(value):
-        if value not in ('t', 'b', 'l', 'r', 'v', 'h', 'a', 'top', 'bottom', 'left', 'right', 'vertical', 'horizontal', 'all'):
-            raise ArgumentTypeError(f"Invalid choice: {value}. Use t/b/l/r or top/bottom/left/right.")
-        return value[0]  # Return the first character for easier processing
-
-    parser = ArgumentParser(description="Generate a HSW base plate")
-    parser.add_argument('--rows', '-r', type=int, default=9, help="Number of rows of holes (default: 9)")
-    parser.add_argument('--cols', '-c', type=int, default=9, help="Number of columns of holes (default: 9)")
-    parser.add_argument('--screws', '-s', choices=list(SCREW_SIZES.keys()), default='', help="Screw size for mounting holes")
-    parser.add_argument(
-        '--alternate', '-a', action="store_true", help="Alternate the hole pattern along the columns (start with a short column)"
-    )
-    parser.add_argument(
-        '--frame',
-        '-f',
-        nargs='*',
-        type=frame_type,
-        metavar='{t,b,l,r,v,h,a|top,bottom,left,right,vertical,horizontal,all}',
-        default=(),
-        help="Include edges in the frame"
-    )
-    parser.add_argument('--no-save', action='store_true', help="Don't save the STEP file")
-    parser.add_argument(
-        "filename",
-        nargs="?",
-        default=None,
-        help="Output STEP filename (default: base-plate-{cols}x{rows}.step)",
-    )
-    args = parser.parse_args()
-
-    plate = make_plate(
-        args.rows,
-        args.cols,
-        screws=args.screws,
-        alternate=args.alternate,
-        frame_top=args.frame.count('t') or args.frame.count('v') or args.frame.count('a'),
-        frame_bottom=args.frame.count('b') or args.frame.count('v') or args.frame.count('a'),
-        frame_left=args.frame.count('l') or args.frame.count('h') or args.frame.count('a'),
-        frame_right=args.frame.count('r') or args.frame.count('h') or args.frame.count('a'),
-    )
-
-    if not args.no_save:
-        if args.filename is not None:
-            filename = args.filename
-        else:
-            filename = f"base-plate-{args.cols}x{args.rows}.step"
-        plate.export(filename)
-
-    return plate
-
-
-if __name__ == "__main__":
-    plate = main()
-
-    # Display in VSCode
-    try:
-        from ocp_vscode import show as show_object
-    except ImportError:
-        pass
-    show_object(plate)
+    return base

@@ -1,0 +1,59 @@
+#!/usr/bin/env python3
+from argparse import ArgumentParser, ArgumentTypeError
+
+from hsw_generator.base import make_base, SCREW_SIZES
+
+def frame_type(value):
+    if value not in ('t', 'b', 'l', 'r', 'v', 'h', 'a', 'top', 'bottom', 'left', 'right', 'vertical', 'horizontal', 'all'):
+        raise ArgumentTypeError(f"Invalid choice: {value}. Use t/b/l/r or top/bottom/left/right.")
+    return value[0]  # Return the first character for easier processing
+
+parser = ArgumentParser(description="Generate a HSW base base")
+parser.add_argument('--rows', '-r', type=int, default=9, help="Number of rows of holes (default: 9)")
+parser.add_argument('--cols', '-c', type=int, default=9, help="Number of columns of holes (default: 9)")
+parser.add_argument('--screws', '-s', choices=list(SCREW_SIZES.keys()), default='', help="Screw size for mounting holes")
+parser.add_argument(
+    '--alternate', '-a', action="store_true", help="Alternate the hole pattern along the columns (start with a short column)"
+)
+parser.add_argument(
+    '--frame',
+    '-f',
+    nargs='*',
+    type=frame_type,
+    metavar='{t,b,l,r,v,h,a|top,bottom,left,right,vertical,horizontal,all}',
+    default=(),
+    help="Include edges in the frame"
+)
+parser.add_argument('--no-save', action='store_true', help="Don't save the STEP file")
+parser.add_argument(
+    "filename",
+    nargs="?",
+    default=None,
+    help="Output STEP filename (default: base-base-{cols}x{rows}.step)",
+)
+args = parser.parse_args()
+
+base = make_base(
+    args.rows,
+    args.cols,
+    screws=args.screws,
+    alternate=args.alternate,
+    frame_top=args.frame.count('t') or args.frame.count('v') or args.frame.count('a'),
+    frame_bottom=args.frame.count('b') or args.frame.count('v') or args.frame.count('a'),
+    frame_left=args.frame.count('l') or args.frame.count('h') or args.frame.count('a'),
+    frame_right=args.frame.count('r') or args.frame.count('h') or args.frame.count('a'),
+)
+
+if not args.no_save:
+    if args.filename is not None:
+        filename = args.filename
+    else:
+        filename = f"base-base-{args.cols}x{args.rows}.step"
+    base.export(filename)
+
+# Display in VSCode
+try:
+    from ocp_vscode import show as show_object
+except ImportError:
+    pass
+show_object(base)
