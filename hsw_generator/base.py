@@ -21,6 +21,7 @@ def make_base(
     frame_left: bool = False,
     frame_right: bool = False,
     hex_corners: bool = False,
+    vertical_stack: bool = False,
 ) -> cq.Workplane:
     """
     Make a HSW base with holes for mounting.
@@ -35,7 +36,11 @@ def make_base(
         frame_left: Include the left edge in the frame.
         frame_right: Include the right edge in the frame.
         hex_corners: Make hexagonal corners in the frame.
+        stack: Add additional profiles at the top to allow stacking multiple bases vertically.
+               Only applies if no top frame is included.
     """
+
+    if frame_top: vertical_stack = False
 
     h = 2 / 3**0.5
 
@@ -62,21 +67,19 @@ def make_base(
     holes = []
     for col in range(cols):
         dy, nr = (0.0, rows) if (col % 2) == alternate else (0.5 * Py, rows - 1)
-        for row in range(nr):
-            hole = profile.translate((col * 0.75 * Px, row * Py + dy, 0))
-            holes.append(hole)
+        holes.extend(profile.translate((col * 0.75 * Px, row * Py + dy, 0)) for row in range(nr))
 
     right_screw = (cols + 1 if alternate else cols) // 2 - 1
 
     edges = []
-    remove_frame_hex = cq.Workplane("XY").polygon(6, P * h + 0.01).extrude(8.0) \
+    frame_hex = cq.Workplane("XY").polygon(6, P * h + 0.01).extrude(8.0) \
         .translate((-0.25 * Px, 0, 0))
-    left_hex = remove_frame_hex.translate((0, Py / 2 if alternate else 0, 0))
+    left_hex = frame_hex.translate((0, Py / 2 if alternate else 0, 0))
     left_right_rows = rows + (0 if alternate else 1)
     if not frame_left:  # Left edge
-        for row in range(left_right_rows):
-            edge = left_hex.translate((0, row * P, 0))
-            edges.append(edge)
+        edges = [left_hex.translate((0, row * P, 0)) for row in range(left_right_rows)]
+    else:
+        edges = []
     if not frame_right:  # Right edge
         if cols % 2 == 0:
             if alternate:
@@ -88,33 +91,39 @@ def make_base(
         else:
             dy = 0.0
         right_hex = left_hex.translate(((cols + 1) * 0.75 * Px, dy, 0))
-        for row in range(left_right_rows):
-            edge = right_hex.translate((0, row * P, 0))
-            edges.append(edge)
+        edges.extend(right_hex.translate((0, row * P, 0)) for row in range(left_right_rows))
     tbs, tbe = (1, right_screw) if screws else (0, right_screw + 1)
-    bottom_hex = remove_frame_hex.translate((0.75 * Px if alternate else 1.50 * Px, 0, 0))
+    bottom_hex = frame_hex.translate((0.75 * Px if alternate else 1.50 * Px, 0, 0))
     if not frame_bottom:  # Bottom edge
-        for i in range(tbs, tbe):
-            edges.append(bottom_hex.translate((i * 1.50 * Px, 0, 0)))
+        edges.extend(bottom_hex.translate((i * 1.50 * Px, 0, 0)) for i in range(tbs, tbe))
     if not frame_top:  # Top edge
         top_hex = bottom_hex.translate((0, rows * Py, 0))
-        for i in range(tbs, tbe):
-            edges.append(top_hex.translate((i * 1.50 * Px, 0, 0)))
+        edges.extend(top_hex.translate((i * 1.50 * Px, 0, 0)) for i in range(tbs, tbe))
 
     if hex_corners:
         if frame_left:
-            edges.append(remove_frame_hex)
-            edges.append(remove_frame_hex.translate((0, rows * Py, 0)))
+            if frame_bottom:
+                edges.append(frame_hex)
+            if frame_top:
+                edges.append(frame_hex.translate((0, rows * Py, 0)))
         if frame_right:
-            edges.append(remove_frame_hex.translate(((cols + 1) * 0.75 * Px, 0, 0)))
-            edges.append(remove_frame_hex.translate(((cols + 1) * 0.75 * Px, rows * Py, 0)))
-
+            if frame_bottom:
+                edges.append(frame_hex.translate(((cols + 1) * 0.75 * Px, 0, 0)))
+            if frame_top:
+                edges.append(frame_hex.translate(((cols + 1) * 0.75 * Px, rows * Py, 0)))
 
     base = cq.Workplane("XY").box((0.75 * cols + 0.25) * Px, rows * Py, 8.0, centered=(False, False, False))
-    base = base.cut(cq.Compound.makeCompound([h.val() for h in holes]))
+    base = base.cut(cq.Compound.makeCompound(h.val() for h in holes))
 
     if edges:
         base = base.cut(reduce(lambda a, b: a.union(b), edges))
+
+    if vertical_stack:
+        add = frame_hex.translate(((0.75 if alternate else 1.50) * Px, rows * Py, 0)) \
+            .cut(profile.translate(((0 if alternate else 0.75) * Px, (rows - 0.5) * Py, 0)))
+        start, end = (1, right_screw) if screws else (0, right_screw + 1)
+        add_row = cq.Compound.makeCompound(add.translate((1.50 * i * Px, 0, 0)).val() for i in range(start, end))
+        base = base.union(add_row)
 
     screw = SCREW_SIZES.get(screws)
 

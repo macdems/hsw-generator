@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
+import sys
 from argparse import ArgumentParser, ArgumentTypeError
 
-from hsw_generator.base import make_base, SCREW_SIZES
+from hsw_generator.base import SCREW_SIZES, make_base
+
 
 def frame_type(value):
     if value not in ('t', 'b', 'l', 'r', 'v', 'h', 'a', 'top', 'bottom', 'left', 'right', 'vertical', 'horizontal', 'all'):
         raise ArgumentTypeError(f"Invalid choice: {value}. Use t/b/l/r or top/bottom/left/right.")
     return value[0]  # Return the first character for easier processing
+
 
 parser = ArgumentParser(description="Generate a HSW base base.")
 parser.add_argument('--rows', '-r', type=int, default=9, help="number of rows of holes (default: 9)")
@@ -25,6 +28,12 @@ parser.add_argument(
     help="include edges in the frame"
 )
 parser.add_argument('--hex-corners', '-e', action='store_true', help="make hexagonal corners in the frame")
+parser.add_argument(
+    '--vertical-stack',
+    '-v',
+    action='store_true',
+    help="add additional profiles at the top to allow stacking multiple bases vertically"
+)
 parser.add_argument('--no-save', action='store_true', help="do not save the STEP file")
 parser.add_argument(
     "filename",
@@ -34,17 +43,29 @@ parser.add_argument(
 )
 args = parser.parse_args()
 
+frame_top = args.frame.count('t') or args.frame.count('v') or args.frame.count('a')
+frame_bottom = args.frame.count('b') or args.frame.count('v') or args.frame.count('a')
+frame_left = args.frame.count('l') or args.frame.count('h') or args.frame.count('a')
+frame_right = args.frame.count('r') or args.frame.count('h') or args.frame.count('a')
+
+if args.vertical_stack and frame_top:
+    print("Warning: vertical stack option is ignored when top frame is included.", file=sys.stderr)
+
 base = make_base(
     args.rows,
     args.cols,
     screws=args.screws,
     alternate=args.alternate,
-    frame_top=args.frame.count('t') or args.frame.count('v') or args.frame.count('a'),
-    frame_bottom=args.frame.count('b') or args.frame.count('v') or args.frame.count('a'),
-    frame_left=args.frame.count('l') or args.frame.count('h') or args.frame.count('a'),
-    frame_right=args.frame.count('r') or args.frame.count('h') or args.frame.count('a'),
+    frame_top=frame_top,
+    frame_bottom=frame_bottom,
+    frame_left=frame_left,
+    frame_right=frame_right,
     hex_corners=args.hex_corners,
+    vertical_stack=args.vertical_stack,
 )
+
+bbox = base.val().BoundingBox()
+print(f"Base dimensions: {bbox.xlen:.1f} x {bbox.ylen:.1f} mm")
 
 if not args.no_save:
     if args.filename is not None:

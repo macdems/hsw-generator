@@ -59,6 +59,7 @@ To save the output to a specific file:
 - `--alternate`, `-a`   Alternate the hole pattern along the columns (start with a short column).
 - `--frame`, `-f`   Include edges in the frame. Available options: `top`, `bottom`, `left`, `right`, `vertical`, `horizontal`, `all` (you can shortcut with the first letter).
 - `--hex-corners`, `-e`   Make hexagonal corners in the frame.
+- `--stack`, `-v`   Add additional profiles at the top to allow stacking multiple bases vertically. Only applies if no top frame is included.
 - `--no-save`   Don’t save the STEP file.
 
 ## Development Notes
