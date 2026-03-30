@@ -8,12 +8,12 @@ def frame_type(value):
         raise ArgumentTypeError(f"Invalid choice: {value}. Use t/b/l/r or top/bottom/left/right.")
     return value[0]  # Return the first character for easier processing
 
-parser = ArgumentParser(description="Generate a HSW base base")
-parser.add_argument('--rows', '-r', type=int, default=9, help="Number of rows of holes (default: 9)")
-parser.add_argument('--cols', '-c', type=int, default=9, help="Number of columns of holes (default: 9)")
-parser.add_argument('--screws', '-s', choices=list(SCREW_SIZES.keys()), default='', help="Screw size for mounting holes")
+parser = ArgumentParser(description="Generate a HSW base base.")
+parser.add_argument('--rows', '-r', type=int, default=9, help="number of rows of holes (default: 9)")
+parser.add_argument('--cols', '-c', type=int, default=9, help="number of columns of holes (default: 9)")
+parser.add_argument('--screws', '-s', choices=list(SCREW_SIZES.keys()), default='', help="screw size for mounting holes")
 parser.add_argument(
-    '--alternate', '-a', action="store_true", help="Alternate the hole pattern along the columns (start with a short column)"
+    '--alternate', '-a', action="store_true", help="alternate the hole pattern along the columns (start with a short column)"
 )
 parser.add_argument(
     '--frame',
@@ -22,14 +22,14 @@ parser.add_argument(
     type=frame_type,
     metavar='{t,b,l,r,v,h,a|top,bottom,left,right,vertical,horizontal,all}',
     default=(),
-    help="Include edges in the frame"
+    help="include edges in the frame"
 )
-parser.add_argument('--no-save', action='store_true', help="Don't save the STEP file")
+parser.add_argument('--no-save', action='store_true', help="do not save the STEP file")
 parser.add_argument(
     "filename",
     nargs="?",
     default=None,
-    help="Output STEP filename (default: base-base-{cols}x{rows}.step)",
+    help="output STEP filename (default: base-base-{cols}x{rows}.step)",
 )
 args = parser.parse_args()
 

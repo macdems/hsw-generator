@@ -27,7 +27,7 @@ def make_base(
     Args:
         rows: Number of rows of holes.
         cols: Number of columns of holes.
-        screws: Screw size for mounting holes (e.g. 'M3', 'M3.5').
+        screws: Screw size for mounting holes ('M3', 'M3.5', or 'M4').
         alternate:  Alternate the hole pattern along the columns (start with a short column).
         frame_top: Include the top edge in the frame.
         frame_bottom: Include the bottom edge in the frame.
