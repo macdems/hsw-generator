@@ -48,7 +48,7 @@ if not args.no_save:
     if args.filename is not None:
         filename = args.filename
     else:
-        filename = f"base-base-{args.cols}x{args.rows}.step"
+        filename = f"hsw-base-{args.cols}x{args.rows}.step"
     base.export(filename)
 
 # Display in VSCode
@@ -56,4 +56,8 @@ try:
     from ocp_vscode import show as show_object
 except ImportError:
     pass
-show_object(base)
+
+try:
+    show_object(base)
+except NameError:
+    pass
