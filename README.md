@@ -52,13 +52,14 @@ To save the output to a specific file:
 
 ### Available options
 
-- `-h`, `--help`        Show help message and exit
-- `--rows`, `-r`   Number of rows of holes (default: `9`)
-- `--cols`, `-c`   Number of columns of holes (default: `9`)
-- `--screws`, `-s`   Screw size for mounting holes
-- `--alternate`, `-a`   Alternate the hole pattern along the columns (start with a short column)
+- `-h`, `--help`        Show help message and exit.
+- `--rows`, `-r`   Number of rows of holes (default: `9`).
+- `--cols`, `-c`   Number of columns of holes (default: `9`).
+- `--screws`, `-s`   Screw size for mounting holes.
+- `--alternate`, `-a`   Alternate the hole pattern along the columns (start with a short column).
 - `--frame`, `-f`   Include edges in the frame. Available options: `top`, `bottom`, `left`, `right`, `vertical`, `horizontal`, `all` (you can shortcut with the first letter).
-- `--no-save`   Don’t save the STEP file
+- `--hex-corners`, `-e`   Make hexagonal corners in the frame.
+- `--no-save`   Don’t save the STEP file.
 
 ## Development Notes
 

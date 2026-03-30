@@ -20,6 +20,7 @@ def make_base(
     frame_bottom: bool = True,
     frame_left: bool = False,
     frame_right: bool = False,
+    hex_corners: bool = False,
 ) -> cq.Workplane:
     """
     Make a HSW base with holes for mounting.
@@ -33,6 +34,7 @@ def make_base(
         frame_bottom: Include the bottom edge in the frame.
         frame_left: Include the left edge in the frame.
         frame_right: Include the right edge in the frame.
+        hex_corners: Make hexagonal corners in the frame.
     """
 
     h = 2 / 3**0.5
@@ -63,13 +65,12 @@ def make_base(
         for row in range(nr):
             hole = profile.translate((col * 0.75 * Px, row * Py + dy, 0))
             holes.append(hole)
-    holes = cq.Compound.makeCompound([h.val() for h in holes])
 
     right_screw = (cols + 1 if alternate else cols) // 2 - 1
 
+    edges = []
     remove_frame_hex = cq.Workplane("XY").polygon(6, P * h + 0.01).extrude(8.0) \
         .translate((-0.25 * Px, 0, 0))
-    edges = []
     left_hex = remove_frame_hex.translate((0, Py / 2 if alternate else 0, 0))
     left_right_rows = rows + (0 if alternate else 1)
     if not frame_left:  # Left edge
@@ -99,13 +100,21 @@ def make_base(
         top_hex = bottom_hex.translate((0, rows * Py, 0))
         for i in range(tbs, tbe):
             edges.append(top_hex.translate((i * 1.50 * Px, 0, 0)))
-    edges = reduce(lambda a, b: a.union(b), edges) if edges else None
 
-    # Plate
+    if hex_corners:
+        if frame_left:
+            edges.append(remove_frame_hex)
+            edges.append(remove_frame_hex.translate((0, rows * Py, 0)))
+        if frame_right:
+            edges.append(remove_frame_hex.translate(((cols + 1) * 0.75 * Px, 0, 0)))
+            edges.append(remove_frame_hex.translate(((cols + 1) * 0.75 * Px, rows * Py, 0)))
+
 
     base = cq.Workplane("XY").box((0.75 * cols + 0.25) * Px, rows * Py, 8.0, centered=(False, False, False))
-    base = base.cut(holes)
-    if edges: base = base.cut(edges)
+    base = base.cut(cq.Compound.makeCompound([h.val() for h in holes]))
+
+    if edges:
+        base = base.cut(reduce(lambda a, b: a.union(b), edges))
 
     screw = SCREW_SIZES.get(screws)
 

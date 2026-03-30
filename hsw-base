@@ -24,6 +24,7 @@ parser.add_argument(
     default=(),
     help="include edges in the frame"
 )
+parser.add_argument('--hex-corners', '-e', action='store_true', help="make hexagonal corners in the frame")
 parser.add_argument('--no-save', action='store_true', help="do not save the STEP file")
 parser.add_argument(
     "filename",
@@ -42,6 +43,7 @@ base = make_base(
     frame_bottom=args.frame.count('b') or args.frame.count('v') or args.frame.count('a'),
     frame_left=args.frame.count('l') or args.frame.count('h') or args.frame.count('a'),
     frame_right=args.frame.count('r') or args.frame.count('h') or args.frame.count('a'),
+    hex_corners=args.hex_corners,
 )
 
 if not args.no_save:
