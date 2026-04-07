@@ -4,9 +4,9 @@ from functools import reduce
 import cadquery as cq
 
 SCREW_SIZES = {  # diameter, head diameter (0.1 mm clearance included)
-    'M3': (3.3, 5.6),
-    'M3.5': (3.8, 6.6),
-    'M4': (4.3, 7.6),
+    'M3': (3.3, 6.0),
+    'M3.5': (3.8, 7.0),
+    'M4': (4.3, 8.0),
 }
 
 
